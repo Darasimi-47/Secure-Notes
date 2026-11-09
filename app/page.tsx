@@ -3,6 +3,10 @@ import Link from 'next/link'
 import { createClient } from "../app/lib/supabase/server"
 import { createNote, logout } from './actions'
 
+
+
+export const instant = false
+
 type Props = {
   searchParams: Promise<{
     error?: string

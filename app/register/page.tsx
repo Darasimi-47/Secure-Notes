@@ -2,6 +2,10 @@
 import Link from 'next/link'
 import { signup } from '../login/actions'
 
+
+
+export const instant = false
+
 type RegisterPageProps = {
   searchParams: Promise<{
     error?: string

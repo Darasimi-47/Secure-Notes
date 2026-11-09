@@ -2,6 +2,8 @@
 import Link from 'next/link'
 import { login } from './actions'
 
+
+export const instant = false
 type Props = {
   searchParams: Promise<{ error?: string }>
 }
