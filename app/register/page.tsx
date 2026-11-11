@@ -48,7 +48,7 @@ export default async function RegisterPage({
           {error && (
             <div
               role="alert"
-              className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+              className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-s m text-red-300"
             >
               {error}
             </div>

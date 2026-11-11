@@ -1,21 +1,26 @@
 
 import Link from 'next/link'
-import { createClient } from "../app/lib/supabase/server"
-import { createNote, logout } from './actions'
-
-
+import { Suspense } from 'react'
+import { createClient } from './lib/supabase/server'
+import { createNote, logout, deleteNote } from './actions'
 
 export const instant = false
 
-type Props = {
-  searchParams: Promise<{
-    error?: string
-  }>
+function LoadingNotes() {
+  return (
+    <main className="min-h-screen bg-slate-950 px-5 py-10 text-white">
+      <div className="mx-auto max-w-6xl rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
+        Loading your private notes...
+      </div>
+    </main>
+  )
 }
 
-export default async function HomePage({ searchParams }: Props) {
-  const { error } = await searchParams
-
+async function NotesDashboard({
+  error,
+}: {
+  error?: string
+}) {
   const supabase = await createClient()
 
   const {
@@ -35,7 +40,6 @@ export default async function HomePage({ searchParams }: Props) {
       {/* Navigation */}
       <nav className="border-b border-slate-800 bg-slate-900">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-
           <div>
             <h1 className="text-2xl font-bold">
               Secure<span className="text-emerald-400">Notes</span>
@@ -53,15 +57,13 @@ export default async function HomePage({ searchParams }: Props) {
               Log out
             </button>
           </form>
-
         </div>
       </nav>
 
       <div className="mx-auto max-w-6xl px-5 py-10">
 
-        {/* Welcome */}
+        {/* Welcome Section */}
         <section className="mb-10 rounded-2xl bg-gradient-to-r from-emerald-950 to-slate-900 p-7 sm:p-10">
-
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-emerald-400">
             Tutor Dashboard
           </p>
@@ -78,16 +80,15 @@ export default async function HomePage({ searchParams }: Props) {
             Keep track of your students' academic progress.
             Your notes are private and accessible only through your account.
           </p>
-
         </section>
 
-        {/* Create Note */}
+        {/* Create New Note */}
         <section className="mb-12">
-
           <div className="mb-5">
             <h2 className="text-2xl font-bold">
               Create a new note
             </h2>
+
             <p className="mt-1 text-sm text-slate-400">
               Record a student's progress or learning experience.
             </p>
@@ -106,7 +107,6 @@ export default async function HomePage({ searchParams }: Props) {
             action={createNote}
             className="rounded-2xl border border-slate-800 bg-slate-900 p-6"
           >
-
             <div className="mb-5">
               <label
                 htmlFor="title"
@@ -149,18 +149,17 @@ export default async function HomePage({ searchParams }: Props) {
             >
               + Save note
             </button>
-
           </form>
         </section>
 
         {/* Saved Notes */}
         <section>
-
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-bold">
                 My saved notes
               </h2>
+
               <p className="mt-1 text-sm text-slate-400">
                 Your personal collection of student records.
               </p>
@@ -182,11 +181,17 @@ export default async function HomePage({ searchParams }: Props) {
               {notes.map((note) => (
                 <article
                   key={note.id}
-                  className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-emerald-500/50"
+                  className="group relative flex flex-col rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-emerald-500/50"
                 >
 
-                  <div className="mb-4 flex items-start justify-between gap-3">
+                  {/* Entire card opens the individual note */}
+                  <Link
+                    href={`/notes/${note.id}`}
+                    aria-label={`Read ${note.title}`}
+                    className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-emerald-400"
+                  />
 
+                  <div className="pointer-events-none relative z-10 mb-4 flex items-start justify-between gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-xl">
                       📝
                     </div>
@@ -194,32 +199,48 @@ export default async function HomePage({ searchParams }: Props) {
                     <span className="text-xs text-slate-500">
                       #{note.id}
                     </span>
-
                   </div>
 
-                  <h3 className="mb-3 break-words text-lg font-bold">
+                  <h3 className="pointer-events-none relative z-10 mb-3 break-words text-lg font-bold transition group-hover:text-emerald-400">
                     {note.title}
                   </h3>
 
-                  <p className="mb-6 flex-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-400">
+                  <p className="pointer-events-none relative z-10 mb-6 flex-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-400">
                     {note.body || 'No additional details provided.'}
                   </p>
 
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-4">
-
+                  <div className="pointer-events-none relative z-10 mb-4 border-t border-slate-800 pt-4">
                     <span className="text-xs text-slate-500">
-                      {new Date(note.created_at).toLocaleDateString()}
+                      Created: {new Date(note.created_at).toLocaleDateString()}
                     </span>
+                  </div>
+
+                  {/* Note Actions */}
+                  <div className="relative z-20 flex flex-wrap items-center gap-3">
 
                     <Link
                       href={`/notes/${note.id}`}
-                      className="text-sm font-semibold text-emerald-400 hover:text-emerald-300"
+                      className="flex-1 rounded-lg bg-emerald-500 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-600"
                     >
-                      Edit note →
+                      Read / Edit
                     </Link>
 
-                  </div>
+                    <form action={deleteNote}>
+                      <input
+                        type="hidden"
+                        name="id"
+                        value={note.id}
+                      />
 
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-red-500/40 px-4 py-2.5 text-sm font-semibold text-red-400 transition hover:bg-red-500/10"
+                      >
+                        Delete
+                      </button>
+                    </form>
+
+                  </div>
                 </article>
               ))}
 
@@ -228,7 +249,6 @@ export default async function HomePage({ searchParams }: Props) {
           ) : (
 
             <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 px-6 py-16 text-center">
-
               <div className="mb-4 text-5xl">📚</div>
 
               <h3 className="text-xl font-bold">
@@ -239,11 +259,9 @@ export default async function HomePage({ searchParams }: Props) {
                 You haven't saved any notes. Create your first
                 student record using the form above.
               </p>
-
             </div>
 
           )}
-
         </section>
 
         {/* Footer */}
@@ -253,5 +271,19 @@ export default async function HomePage({ searchParams }: Props) {
 
       </div>
     </main>
+  )
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const { error } = await searchParams
+
+  return (
+    <Suspense fallback={<LoadingNotes />}>
+      <NotesDashboard error={error} />
+    </Suspense>
   )
 }
